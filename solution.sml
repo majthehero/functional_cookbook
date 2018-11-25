@@ -63,14 +63,22 @@ struct
     fun toList dict = 
         dict;
 
-    fun fromList list =  (* TODO: check for equal keys *)
+    fun fromList list =  (* check for equal keys *)
         raise NotImplemented;
 
     fun merge a dict = (* take from dict, put into a *)
-        raise NotImplemented;
+        case dict of nil => a
+        | ((k,v)::t) => merge (set dict k v) t;
 
-    fun filter f dict = raise NotImplemented
-    fun map f dict = raise NotImplemented
+    fun filter f dict = 
+        case dict of nil => nil
+        | ((k,v)::t) => 
+            if f(k,v) then (k,v)::(filter f t)
+            else filter f t;
+
+    fun map f dict = 
+        case dict of nil => nil
+        | ((k,v)::t) => (f(k,v))::(map f t);
 end
 
 structure Cookbook :> COOKBOOK =
