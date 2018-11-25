@@ -109,9 +109,8 @@ struct
     fun ingredientToString ingredient = 
         ingredient;
 
-    fun stockToString stock = 
-        let
-            fun str_qsort (lst, f_cmp:string*string->order) =
+    (* util : TODO: move to some util thing somewhere *)
+    fun str_qsort (lst, f_cmp:string*string->order) =
                 case lst of nil => lst
                 | [x] => [x]
                 | _ =>
@@ -126,6 +125,9 @@ struct
                     in
                         str_qsort(lower, f_cmp) @ str_qsort(upper, f_cmp)
                     end;
+
+    fun stockToString stock = 
+        let 
             val sorted = str_qsort (Dictionary.toList(stock), String.compare)
             val text = List.foldr 
                             (fn ((ing, x), pre_text) => 
@@ -137,9 +139,29 @@ struct
             (print text; text)
         end;
 
-    fun pricelistToString pricelist = raise NotImplemented
-    fun recipeToString recipe = raise NotImplemented
-    fun cookbookToString cookbook = raise NotImplemented
+    fun pricelistToString pricelist = 
+        let 
+            val sorted = str_qsort (Dictionary.toList(pricelist), String.compare)
+            val text = List.foldr
+                (fn ((ing, prc), pre_text) =>
+                    pre_text ^ ing ^ ": " ^ (Real.toString prc) ^ "\n") 
+                    "" sorted
+        in
+            (print text; text)
+        end;
+
+    fun recipeToString recipe = 
+        let
+            val (rec_name, rec_stock) = recipe
+            val title = "=== " ^ rec_name ^ " ==="
+        in
+            (print title; title ^ stockToString(rec_stock))
+        end;
+
+    fun cookbookToString cookbook = 
+        let val sorted = str_qsort(Dictionary.toList(cookbook), String.compare)
+        in List.foldl (fn (rec, acc) => recipeToString(rec) ^ acc) "" sorted
+        end;
 
     fun hasEnoughIngredients stock recipe = raise NotImplemented
     fun cook recipe stock = raise NotImplemented
