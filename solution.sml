@@ -93,13 +93,50 @@ struct
 
     fun makeIngredient name = 
         name;
-    fun makeStock ingredients = raise NotImplemented
-    fun makePricelist pricelist = raise NotImplemented
-    fun makeRecipe recipe = raise NotImplemented
-    fun makeCookbook recipes = raise NotImplemented
 
-    fun ingredientToString ingredient = raise NotImplemented
-    fun stockToString stock = raise NotImplemented
+    fun makeStock ingredients = 
+        Dictionary.fromList ingredients;
+
+    fun makePricelist pricelist = 
+        Dictionary.fromList pricelist;
+
+    fun makeRecipe recipe = 
+        recipe;
+
+    fun makeCookbook recipes = 
+        Dictionary.fromList recipes;
+
+    fun ingredientToString ingredient = 
+        ingredient;
+
+    fun stockToString stock = 
+        let
+            fun str_qsort (lst, f_cmp:string*string->order) =
+                case lst of nil => lst
+                | [x] => [x]
+                | _ =>
+                    let
+                        val mid_key = #1 (hd lst)
+                        val lower = List.filter 
+                            (fn (key,_) => f_cmp(key,mid_key) = LESS)
+                            lst;
+                        val upper = List.filter 
+                            (fn (key,_) => f_cmp(key,mid_key) <> LESS)
+                            lst;
+                    in
+                        str_qsort(lower, f_cmp) @ str_qsort(upper, f_cmp)
+                    end;
+            val sorted = str_qsort (Dictionary.toList(stock), String.compare)
+            val text = List.foldr 
+                            (fn ((ing, x), pre_text) => 
+                                if x > 0 
+                                then pre_text ^ ing ^ ": " ^ (Int.toString x) ^ "\n"
+                                else pre_text) 
+                            "" sorted
+        in
+            (print text; text)
+        end;
+
     fun pricelistToString pricelist = raise NotImplemented
     fun recipeToString recipe = raise NotImplemented
     fun cookbookToString cookbook = raise NotImplemented
