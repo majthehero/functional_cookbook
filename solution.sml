@@ -63,10 +63,12 @@ struct
     fun toList dict = 
         dict;
 
-    fun fromList list =  (* check for equal keys *)
-        raise NotImplemented;
+    fun fromList list = 
+            List.foldr 
+                (fn ((k, v), acc) => set acc k v) 
+                empty list;
 
-    fun merge a dict = (* take from dict, put into a *)
+    fun merge a dict = 
         case dict of nil => a
         | ((k,v)::t) => merge (set dict k v) t;
 
@@ -160,11 +162,41 @@ struct
 
     fun cookbookToString cookbook = 
         let val sorted = str_qsort(Dictionary.toList(cookbook), String.compare)
-        in List.foldl (fn (rec, acc) => recipeToString(rec) ^ acc) "" sorted
+        in List.foldl (fn (r, acc) => recipeToString(r) ^ acc) "" sorted
         end;
 
-    fun hasEnoughIngredients stock recipe = raise NotImplemented
+    fun hasEnoughIngredients stock recipe = 
+        let
+            val (_, required) = recipe 
+        in
+            List.foldr (fn (b, acc) => b andalso acc) true
+            (map
+                (fn (ing_name, ing_num) => 
+                    Dictionary.exists stock ing_name andalso 
+                    (valOf (Dictionary.get stock ing_name)) >= ing_num)
+                (Dictionary.toList required) )
+        end;
+
     fun cook recipe stock = raise NotImplemented
+        (*let
+            val (dish, required) = recipe
+        in
+            Dictionary.filter 
+                (fn (k,v) => v > 0)
+                Dictionary.fromList (
+
+                    Dictionary.set 
+                        (List.foldr
+                            (fn ((ing, num), acc) =>  
+                                Dictionary.set ing
+                                    Dictionary.get stock ing - num)
+                            stock
+                            (Dictionary.toList required))
+                        dish 1)
+        end;*)
+        
+
+
     fun priceOfStock stock pricelist = raise NotImplemented
     fun priceOfRecipe recipe pricelist = raise NotImplemented
     fun missingIngredients recipe stock = raise NotImplemented
