@@ -177,30 +177,62 @@ struct
                 (Dictionary.toList required) )
         end;
 
-    fun cook recipe stock = raise NotImplemented
-        (*let
+    fun cook recipe stock = 
+        let
             val (dish, required) = recipe
         in
-            Dictionary.filter 
-                (fn (k,v) => v > 0)
-                Dictionary.fromList (
+            (Dictionary.set (
+                Dictionary.map (
+                fn (ing, num) => 
+                   (ing, num - (Dictionary.getOrDefault required ing 0))
+            ) stock) dish 1 )
+        end;
+        
+    fun priceOfStock stock pricelist = 
+        List.foldr (
+            fn ((ing, num), acc) => 
+                if not (Dictionary.exists pricelist ing) then raise NoPriceException
+                else (Dictionary.getOrDefault pricelist ing 0.0) * (Real.fromInt num) + acc
+        ) 0.0 (Dictionary.toList stock);
 
-                    Dictionary.set 
-                        (List.foldr
-                            (fn ((ing, num), acc) =>  
-                                Dictionary.set ing
-                                    Dictionary.get stock ing - num)
-                            stock
-                            (Dictionary.toList required))
-                        dish 1)
-        end;*)
+    fun priceOfRecipe recipe pricelist = 
+        let
+            val (dish, required) = recipe
+        in
+            priceOfStock required pricelist
+        end;
+
+    fun missingIngredients recipe stock = 
+        let
+            val (dish, required) = recipe
+        in
+            Dictionary.filter (
+                fn (ing, num) => 
+                (not (Dictionary.exists stock ing)) orelse
+                (Dictionary.getOrDefault stock ing 0) < num
+            ) required
+        end;
+
+    fun possibleRecipes cookbook stock = 
+        Dictionary.filter (
+            fn (ing, required) => 
+                Dictionary.isEmpty
+                    (missingIngredients (ing, required) stock)
+        ) cookbook;
+
+    fun generateVariants recipe substitutions = 
         
 
-
-    fun priceOfStock stock pricelist = raise NotImplemented
-    fun priceOfRecipe recipe pricelist = raise NotImplemented
-    fun missingIngredients recipe stock = raise NotImplemented
-    fun possibleRecipes cookbook stock = raise NotImplemented
-    fun generateVariants recipe substitutions = raise NotImplemented
-    fun cheapestRecipe cookbook pricelist = raise NotImplemented
+    fun cheapestRecipe cookbook pricelist = 
+        List.foldl
+            (
+                fn (recipe, acc) =>
+                    let
+                        val price = priceOfRecipe recipe pricelist
+                    in
+                        if not(isSome acc) orelse (priceOfRecipe (valOf acc) pricelist) > price
+                        then SOME recipe
+                        else acc
+                    end
+            ) NONE (Dictionary.toList cookbook)
 end
