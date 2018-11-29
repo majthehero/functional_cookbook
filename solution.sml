@@ -221,7 +221,41 @@ struct
         ) cookbook;
 
     fun generateVariants recipe substitutions = 
-        
+        let
+            val (dish, req) = recipe
+            fun mutate_recipe (recipe, subst) =
+                let
+                    val generated =
+                        List.tabulate (List.length subst,
+                            fn i => 
+                            let
+                                val (rec_name, rec_req) = recipe
+                                val new_ing = List.nth (subst, i)
+                                val old_ing = List.find (
+                                    fn some_ing => Dictionary.exists rec_req some_ing
+                                ) subst (* OPTION *)
+                                val old_num = if isSome old_ing then Dictionary.get rec_req (valOf old_ing) (* OPTION *)
+                                                else NONE
+                            in
+                                case old_ing of NONE => NONE
+                                | _ =>
+                                    SOME(rec_name, Dictionary.set (Dictionary.remove rec_name (valOf old_ing)) new_ing (valOf old_num))
+                            end)
+                    val generated_fixed = Dictionary.fromList (List.filter (fn el => isSome el) generated)
+                in
+                    case generated_fixed of NONE => Dictionary.empty
+                    | _ => Dictionary.fromList (valOf generated_fixed)
+                end
+        in
+            List.foldl ( 
+                fn (subst, acc) =>
+                    let val new_recepies = mutate_recipe(recipe subst)
+                in
+                    case new_recepies of NONE => acc
+                    | _ => Dictionary.merge acc new_recepies
+                end
+            ) (Dictionary.set Dictionary.empty dish req) substitutions
+        end;
 
     fun cheapestRecipe cookbook pricelist = 
         List.foldl
