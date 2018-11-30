@@ -1,6 +1,15 @@
 exception NotImplemented
 
-exception ElementNotInDict
+fun str_qsort (lst: (string * 'a) list) : (string * 'a) list =
+    case lst of [] => nil
+    | [(s,n)] => [(s,n)]
+    | (s1, n2)::ostalo => 
+    str_qsort(
+        List.filter (fn (s, n) => s <= s1) ostalo
+    ) @ [(s1,n2)] @ str_qsort(
+        List.filter (fn (s, n) => s > s1) ostalo
+    );
+    
 
 structure Dictionary :> DICTIONARY =
 struct
@@ -49,7 +58,7 @@ struct
         else (key, value) :: dict;
 
     fun remove dict key = 
-        if exists dict key then raise ElementNotInDict
+        if not (exists dict key) then dict
         else List.foldr
             (fn ((k,v), acc) => if k = key then acc else (k,v)::acc)
             nil dict;
@@ -111,27 +120,11 @@ struct
     fun ingredientToString ingredient = 
         ingredient;
 
-    (* util : TODO: move to some util thing somewhere *)
-    fun str_qsort (lst, f_cmp:string*string->order) =
-                case lst of nil => lst
-                | [x] => [x]
-                | _ =>
-                    let
-                        val mid_key = #1 (hd lst)
-                        val lower = List.filter 
-                            (fn (key,_) => f_cmp(key,mid_key) = LESS)
-                            lst;
-                        val upper = List.filter 
-                            (fn (key,_) => f_cmp(key,mid_key) <> LESS)
-                            lst;
-                    in
-                        str_qsort(lower, f_cmp) @ str_qsort(upper, f_cmp)
-                    end;
 
     fun stockToString stock = 
         let 
-            val sorted = str_qsort (Dictionary.toList(stock), String.compare)
-            val text = List.foldr 
+            val sorted = str_qsort (Dictionary.toList stock)
+            val text = List.foldl 
                             (fn ((ing, x), pre_text) => 
                                 if x > 0 
                                 then pre_text ^ ing ^ ": " ^ (Int.toString x) ^ "\n"
@@ -143,8 +136,8 @@ struct
 
     fun pricelistToString pricelist = 
         let 
-            val sorted = str_qsort (Dictionary.toList(pricelist), String.compare)
-            val text = List.foldr
+            val sorted = str_qsort (Dictionary.toList pricelist)
+            val text = List.foldl
                 (fn ((ing, prc), pre_text) =>
                     pre_text ^ ing ^ ": " ^ (Real.toString prc) ^ "\n") 
                     "" sorted
@@ -155,13 +148,13 @@ struct
     fun recipeToString recipe = 
         let
             val (rec_name, rec_stock) = recipe
-            val title = "=== " ^ rec_name ^ " ==="
+            val title = "=== " ^ rec_name ^ " ===\n"
         in
             (print title; title ^ stockToString(rec_stock))
         end;
 
     fun cookbookToString cookbook = 
-        let val sorted = str_qsort(Dictionary.toList(cookbook), String.compare)
+        let val sorted = str_qsort (Dictionary.toList cookbook)
         in List.foldl (fn (r, acc) => recipeToString(r) ^ acc) "" sorted
         end;
 
@@ -220,7 +213,8 @@ struct
                     (missingIngredients (ing, required) stock)
         ) cookbook;
 
-    fun generateVariants recipe substitutions = 
+    fun generateVariants recipe substitutions = makeCookbook [recipe] (* ni ratal *)
+    (* fun generateVariants recipe substitutions = 
         let
             val (dish, req) = recipe
             fun mutate_recipe (recipe, subst) =
@@ -249,13 +243,13 @@ struct
         in
             List.foldl ( 
                 fn (subst, acc) =>
-                    let val new_recepies = mutate_recipe(recipe subst)
+                    let val new_recepies = mutate_recipe(recipe, subst)
                 in
                     case new_recepies of NONE => acc
                     | _ => Dictionary.merge acc new_recepies
                 end
             ) (Dictionary.set Dictionary.empty dish req) substitutions
-        end;
+        end; *)
 
     fun cheapestRecipe cookbook pricelist = 
         List.foldl

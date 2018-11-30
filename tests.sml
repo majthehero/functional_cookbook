@@ -101,8 +101,26 @@ fun printRecipeList recipes = print ((String.concatWith "\n\n" (List.map Cookboo
 (* ======================= TESTS ======================= *)
 
 (* Here be dragons. Test your code well! *)
+(* testiral malo sproti, malo premalo, malo pa tukaj.
+   Zaradi pomanjkanja chasa pripravljen na pomanjkanje tochk. *)
+val stock1 = Cookbook.makeStock [
+    (salt, 3),
+    (sugar, 3),
+    (chicken, 2),
+    (salad, 1),
+    (egg, 4),
+    (milk, 4),
+    (flour, 4)
+];
 
-;
+recipesEqual (valOf (Cookbook.cheapestRecipe cookbook pricelist)) scrambledEggsRecipe;
+printRecipe scrambledEggsRecipe;
+stocksEqual stock1 (Cookbook.cook scrambledEggsRecipe stock);
+
 
 ingredientsEqual salt salt;
 ingredientsEqual salt sugar;
+
+
+
+
